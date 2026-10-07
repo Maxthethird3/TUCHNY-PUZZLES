@@ -1,0 +1,10 @@
+{
+  "_comment": "Copy to connectors.json and fill in. Each entry is an MCP server Maximus may READ from. Remove any you don't want it to see.",
+  "github": {
+    "type": "http",
+    "url": "https://api.githubcopilot.com/mcp/",
+    "headers": { "Authorization": "Bearer ${GITHUB_TOKEN}" }
+  },
+  "google_calendar": { "type": "http", "url": "REPLACE_WITH_MCP_URL" },
+  "google_drive":    { "type": "http", "url": "REPLACE_WITH_MCP_URL" }
+}
