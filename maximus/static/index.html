@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maximus</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--mut:#6b7280;--bub:#f1f3f5;--me:#2f5bea;--bd:#e5e7eb}
+@media(prefers-color-scheme:dark){:root{--bg:#111318;--fg:#e8e8ea;--mut:#9aa0aa;--bub:#1d2028;--bd:#2a2e38}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;display:flex;flex-direction:column;height:100dvh}
+header{padding:12px 16px;border-bottom:1px solid var(--bd);font-weight:600}
+#log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.m{max-width:min(720px,88%);padding:10px 14px;border-radius:14px;white-space:pre-wrap;background:var(--bub)}
+.m.me{align-self:flex-end;background:var(--me);color:#fff}
+.t{font-size:13px;color:var(--mut)}
+.ap{border:1px solid var(--bd);border-radius:12px;padding:12px;max-width:min(720px,88%)}
+.ap pre{margin:6px 0;max-height:160px;overflow:auto;font-size:12px;background:var(--bub);padding:8px;border-radius:8px}
+button{font:inherit;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;background:var(--me);color:#fff}
+button.no{background:var(--bub);color:var(--fg)}
+form{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--bd)}
+input{flex:1;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+</style></head><body>
+<header>Maximus</header>
+<div id="log"></div>
+<form id="f"><input id="i" placeholder="Ask Maximus or tell it what to do…" autocomplete="off" autofocus><button id="s">Send</button></form>
+<script>
+const log=document.getElementById('log'),i=document.getElementById('i'),f=document.getElementById('f');
+const ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+let cur=null;
+function add(cls,txt){const d=document.createElement('div');d.className=cls;d.textContent=txt;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+ws.onmessage=e=>{const m=JSON.parse(e.data);
+ if(m.type==='text'){cur=add('m',m.text)}
+ else if(m.type==='tool'){add('t','using '+m.name+'…')}
+ else if(m.type==='error'){add('m','Error: '+m.text)}
+ else if(m.type==='done'){cur=null;i.disabled=false;i.focus()}
+ else if(m.type==='approval'){
+  const d=add('ap','');d.innerHTML='<b></b><pre></pre>';
+  d.querySelector('b').textContent='Maximus wants to run: '+m.tool;d.querySelector('pre').textContent=m.input;
+  for(const [l,ok,c] of [['Approve',true,''],['Deny',false,'no']]){
+   const b=document.createElement('button');b.textContent=l;b.className=c;b.style.marginRight='8px';
+   b.onclick=()=>{ws.send(JSON.stringify({type:'approval',id:m.id,approved:ok}));d.innerHTML='';d.textContent=(ok?'Approved: ':'Denied: ')+m.tool;d.className='t'};
+   d.appendChild(b)}}
+};
+ws.onclose=()=>add('t','Disconnected. Refresh to reconnect.');
+f.onsubmit=e=>{e.preventDefault();const t=i.value.trim();if(!t)return;add('m me',t);ws.send(JSON.stringify({type:'message',text:t}));i.value='';i.disabled=true};
+</script></body></html>
